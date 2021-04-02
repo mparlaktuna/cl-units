@@ -11,41 +11,41 @@
 (defclass unit-type ()
   ((name :type string :reader unit-name)
    (sym :type string :reader unit-symbol)
-   (scale :type scale :initarg nil :accessor unit-scale)))
+   (scale :type scale :initarg :scale :accessor unit-scale)))
 
-(defclass length-unit-type (unit-type) ())
-
-(defclass mass-unit-type (unit-type) ())
-
-(defclass time-unit-type (unit-type) ())
-
-(defmacro make-unit-type (&keys top bottom name)
+(defmacro make-unit-type (&keys name top bottom)
   `(defclass ,name (unit-type)
     ((top :initarg ,top :accessor unit-top-type)
      (bottom :initarg ,bottom :accessor unit-bottom-tyop))))
-  
+
 (defmacro make-unit (unit-type name symbol)
-  `(defclass ,name (,unit-type)
-    ((name :initform (string ,name))
-     (sym :initform (string ,symbol)))))
+  (let ((unit-name (string name))
+	(unit-symbol (string symbol)))
+    `(defclass ,name (,unit-type)
+       ((value :initarg :value :accessor unit-value )
+	(name :initform ,unit-name)
+	(sym :initform ,unit-symbol))
+       (:default-initargs
+	:value 1
+        :scale nil))))
 
-(make-unit length-unit-type meter m)     
-;; (defclass meter (length-unit)
-;;   ((name :initform "meter")
-;;    (sym :initform "m")))
+(defclass length-unit-type (unit-type) ())
+(defclass mass-unit-type (unit-type) ())
+(defclass time-unit-type (unit-type) ())
 
-;; (defclass gram (mass-unit)
-;;   ((name :initform "gram")
-;;    (sym :initform "g")))
+(make-unit-type )
+(make-unit length-unit-type meter m)
+(make-unit mass-unit-type gram g)
+(make-unit time-unit-type unit-second s)
 
-;; (defclass time-second (time-unit)
-;;   ((name :initform "second")
-;;    (sym :initform "s")))
+(defun make-value-with-unit (value unit &key (scale nil))
+  (make-instance unit :value value :scale scale))
 
-;; (defclass unit ()
-;;   ((value :initarg :value :accessor unit-value)
-;;    (top :reader unit-top)
-;;    (bottom :reader unit-bottom)))
+
+(defclass unit ()
+  ((value :initarg :value :accessor unit-value)
+   (top :reader unit-top)
+   (bottom :reader unit-bottom)))
 
 ;; (defclass speed-unit (unit)
 ;;   ((top :type length-unit :initarg :top)
