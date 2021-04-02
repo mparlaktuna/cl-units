@@ -23,7 +23,7 @@
    :scale nil))
 
 (defmacro defbaseunit (name)
-  (let ((name-symbol (intern (concatenate 'string (string name) "-BASE_UNIT"))))
+  (let ((name-symbol (intern (concatenate 'string (string name) "-BASE-UNIT"))))
     `(defclass ,name-symbol (base-unit-type)
        ((unit-type :initform ',name)))))
        
@@ -33,7 +33,7 @@
 (defbaseunit time)
 
 (defmacro defunit (name sym-val base-name)
-  (let ((base-name-symbol (intern (concatenate 'string (string base-name) "-BASE_UNIT"))))
+  (let ((base-name-symbol (intern (concatenate 'string (string base-name) "-BASE-UNIT"))))
     `(defclass ,name (,base-name-symbol)
        ((name :initform ',name)
 	(sym :initform ',sym-val)))))
@@ -47,18 +47,28 @@
    (value :initarg :value :reader measure-value)
    (base-sym :type symbol :reader base-symbol)))
 
-(defmacro defmeasure (name top-base-units bottom-base-units))
+(defmacro defmeasure (name top-base-units bottom-base-units)
+  (let ((class-symbol (intern (concatenate 'string (string name) "-MEASURE")))
+	(make-func (intern (concatenate 'string "MAKE-" (string name) "-MEASURE"))))
+    `(progn
+       (defclass ,class-symbol (measure-type)
+       	 ((base-sym :initform ',name)))
+       (defun ,make-func (value)
+       	 (make-instance ',class-symbol :top ,top-base-units :bottom ,bottom-base-units :value value)))))
 
-(defclass distance-measure (measure-type)
-  ((base-sym :initform 'distance)))
+(defmeasure length (list 'distance) '())
 
-(defmethod make-distance-measure (value (distance distance-base-unit))
-  (make-instance 'distance-unit :top (list distance) :bottom '() :value value))
-
-(defclass speed-unit (unit-type)
-  ((base-sym :initform 'distance/time)))
   
-(defmethod make-speed-unit (value (distance distance-base-unit) (time time-base-unit))
-  (make-instance 'speed-unit :top (list distance) :bottom (list time) :value value))
+;; (defclass distance-measure (measure-type)
+;;   ((base-sym :initform 'distance)))
+
+;; (defmethod make-distance-measure (value (distance distance-base-unit))
+;;   (make-instance 'distance-unit :top (list distance) :bottom '() :value value))
+
+;; (defclass speed-unit (unit-type)
+;;   ((base-sym :initform 'distance/time)))
+  
+;; (defmethod make-speed-unit (value (distance distance-base-unit) (time time-base-unit))
+;;   (make-instance 'speed-unit :top (list distance) :bottom (list time) :value value))
 
   
