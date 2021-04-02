@@ -1,47 +1,53 @@
 (in-package :cl-units)
 
 (defclass scale ()
-  ((name :type string :reader scale-name)
-   (sym :type string :reader scale-symbol)
-   (mult :type integer :initarg :multiplier :accessor scale-multiplier)))
+  ((name :type symbol :reader scale-name)
+   (sym :type symbol :reader scale-symbol)
+   (mult :type number :initarg :multiplier :accessor scale-multiplier)))
 
-(defclass kilo (scale)
-  ((name :initform "kilo")
-   (sym :initform "K")
-   (mult :initform 1000)))
-
+(defmacro defscale (name-val sym-val mult-val)
+  `(defclass ,name-val (scale)
+     ((name :initform ',name-val)
+      (sym :initform ',sym-val)
+      (mult :initform ,mult-val))))
+       
+(defscale kilo K 1000)
+(defscale centi c 0.01)
+      
 (defclass base-unit-type ()
   ((name :type string :reader unit-name)
    (unit-type :type symbol :reader unit-type)
-   (value :type number :reader unit-value :initarg :value)
-   (scale :type scale :initarg :scale :accessor unit-scale)
-   (base-sym :type symbol :accessor base-symbol))
+   (base-sym :type symbol :accessor base-symbol)
+   (scale :type scale :initarg :scale :accessor measure-scale))
   (:default-initargs
-   :value 1
    :scale nil))
-   
-(defclass distance-base-unit (base-unit-type)
-  ((unit-type :initform 'distance)))
-(defclass scalar-base-unit (base-unit-type)
-  ((unit-type :initform 'scalar)))
-(defclass mass-base-unit (base-unit-type)
-  ((unit-type :initform 'mass)))
-(defclass time-base-unit (base-unit-type)
-  ((unit-type :initform 'time)))
 
-(defclass meter (distance-base-unit)
-  ((name :initform 'meter)
-   (sym :initform 'm)))
+(defmacro defbaseunit (name)
+  (let ((name-symbol (intern (concatenate 'string (string name) "-BASE_UNIT"))))
+    `(defclass ,name-symbol (base-unit-type)
+       ((unit-type :initform ',name)))))
+       
+(defbaseunit distance)
+(defbaseunit scalar)
+(defbaseunit mass)
+(defbaseunit time)
 
-(defclass unit-second (time-base-unit)
-  ((name :initform 'second)
-   (sym :initform 's)))
+(defmacro defunit (name sym-val base-name)
+  (let ((base-name-symbol (intern (concatenate 'string (string base-name) "-BASE_UNIT"))))
+    `(defclass ,name (,base-name-symbol)
+       ((name :initform ',name)
+	(sym :initform ',sym-val)))))
+        
+(defunit meter m distance)
+(defunit unit-second s time)       
 
 (defclass measure-type ()
   ((top-units :initarg :top :reader top-units)
    (bottom-units :initarg :bottom :reader bottom-units)
-   (value :initarg :value :reader unit-value)
+   (value :initarg :value :reader measure-value)
    (base-sym :type symbol :reader base-symbol)))
+
+(defmacro defmeasure (name top-base-units bottom-base-units))
 
 (defclass distance-measure (measure-type)
   ((base-sym :initform 'distance)))
@@ -50,7 +56,7 @@
   (make-instance 'distance-unit :top (list distance) :bottom '() :value value))
 
 (defclass speed-unit (unit-type)
-  ())
+  ((base-sym :initform 'distance/time)))
   
 (defmethod make-speed-unit (value (distance distance-base-unit) (time time-base-unit))
   (make-instance 'speed-unit :top (list distance) :bottom (list time) :value value))
